@@ -1,0 +1,23 @@
+Dataset:
+
+  repositories:
+    repo_core1:
+      repo: https://repo/core.git
+      path: path1
+    repo_core2:
+      repo: https://repo/core.git
+      path: path2
+      version: REL1_25
+    repo_core3:
+      repo: https://repo/core.git
+      path: path3
+
+Processor:
+- name: clone repositories
+  git:
+   repo: "{{ item.value.repo }}"
+   dest: "/root/tests/{{ item.value.path }}/"
+   version: "{{ item.value.version | default('HEAD') }}"
+  become: true
+  become_user: apache
+  with_dict: "{{ repositories }}"
