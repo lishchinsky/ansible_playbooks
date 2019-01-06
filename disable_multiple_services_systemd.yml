@@ -1,0 +1,23 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Check if swift-storage services are deployed
+      command: systemctl is-enabled --quiet "{{ item }}"
+      register: swift_services_enabled
+      ignore_errors: true
+      with_items:
+            - redis
+            - nginx
+    - debug:
+         var: mult_services_enabled
+    - name: Check that services are running
+      command: systemctl is-active --quiet "{{ item.item }}"
+      with_items: "{{ mult_services_enabled.results }}"
+      when: item.rc == 0
+    - name: Stop and disable services
+      service: name={{ item.item }} state=stopped enabled=no
+      with_items: "{{ mult_services_enabled.results }}"
+      when: item.rc == 0
