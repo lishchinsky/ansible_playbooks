@@ -1,0 +1,73 @@
+Init process in Linux is the first process to start on boot, and it tracks all the system services and Daemons.
+Various Linux Distros have created different implementations of the standard init systems.
+Currently, the most popular init system adopted by various Linux distros is systemd.
+
+In Ansible, the systemd processes can be controlled by systemd module. 
+If your target system is not using the systemd init system, then you can use the Ansible service module.
+
+Starting a new service using systemd
+As with most of the Ansible modules, we need the name and the state parameters at the minimum. 
+Here you set the service which you need to start, against the name parameter and the state you want, in this case, present, in the state parameter. 
+If the systemd and the service files are not present in the remote system, then the command will throw an error.
+
+The following task is similar to the Linux command ‘systemctl start docker’.
+
+- hosts: loc
+  tasks:
+  - name: Ansible systemd service example
+    systemd:
+      name: docker
+      state: started
+Note 1: If the process is already started then the state: started does nothing. 
+If your intention is to restart the service – for example, in cases where you made changes in some configuration files- then you can use the ‘state: restarted’. Note that ‘state: restarted’ is not idempotent and it will always restart the service.
+
+- hosts: loc
+  tasks:
+  - name: Ansible service restart example
+    systemd:
+      name: docker
+      state: restarted
+If you have made any changes to the systemd unit files, and you want it to take effect, then do a daemon reload before restarting. By default, the daemon_reload is set to no.
+
+- hosts: loc
+  tasks:
+  - name: Ansible service daemon reload example
+    systemd:
+      name: docker
+      state: restarted
+      daemon_reload: yes
+Error: If the service you are trying to control is not available on the remote server, then you will get an error like below.
+
+fatal: [ansible-control-machine]: FAILED! => {"changed": false, "failed": true, "msg": "Could not find the requested service docker: cannot check nor set state"}
+If you need a particular service to be started when the Linux OS boots up, then you will have to enable the service. Systemd module also provides an ‘enabled’ parameter for this.
+
+- hosts: loc
+  tasks:
+  - name: Ansible service enable example
+    systemd:
+      name: docker
+      enabled: yes
+Stopping a service
+You can stop any running services using the ‘stopped’ parameter. This is an idempotent option, so if the service is already stopped, then Ansible won’t throw an error.
+
+- hosts: loc
+  tasks:
+  - name: Ansible service stop example
+    systemd:
+      name: docker
+      state: stopped
+Starting multiple services using with_items
+As with other Ansible modules, you can use the with_items parameter to control multiple services in a single task. Make sure the {{ item }} is within quotes, and the with_items block is intended at the level of module name -here systemd. The following example will restart three tasks docker, Nginx, and NTP. It will do a daemon reload before it restarts the service.
+
+- hosts: loc
+  tasks:
+  - name: Ansible service with_items example
+    systemd:
+      name: "{{ item }}"
+      state: restarted
+      daemon_reload: yes
+    with_items:
+      - 'docker'
+      - 'nginx'
+      - 'ntp'
+Check out the Ansible user module  to see how to mange the user accounts in Linux.
